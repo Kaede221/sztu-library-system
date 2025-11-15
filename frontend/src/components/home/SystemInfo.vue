@@ -33,7 +33,7 @@ import pkg from "../../../package.json";
         </div>
         <div class="info-item">
           <span class="info-label">技术栈:</span>
-          <span class="info-value">Vue 3, TypeScript, Element Plus</span>
+          <span class="info-value">Vue 3, TypeScript, Element Plus, Python, MySQL</span>
         </div>
       </div>
     </div>

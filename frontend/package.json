@@ -1,14 +1,14 @@
 {
-  "name": "ezhan-admin-vue",
+  "name": "sztu-library-system",
   "private": true,
   "version": "0.1.8",
   "type": "module",
   "author": {
-    "name": "kaedeshimizu",
+    "name": "梁宸 殷一婷",
     "email": "kaedeshimizu@qq.com",
     "url": "https://github.com/Kaede221"
   },
-  "license": "GPL",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
