@@ -1,0 +1,32 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "esnext",
+    "types": [
+      "vite/client"
+    ],
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    }
+  },
+  "isolatedModules": true
+}
