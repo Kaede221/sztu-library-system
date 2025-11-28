@@ -1,24 +1,121 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
+"""
+图书管理路由模块
+包含图书的CRUD操作和搜索功能
+"""
 
-from ..database import SessionLocal, Book
-from ..schemas import Book as BookSchema, BookCreate, BookUpdate
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+
+from ..database import get_db, Book, User
+from ..schemas import (
+    Book as BookSchema,
+    BookCreate,
+    BookUpdate,
+    BookListResponse,
+    MessageResponse,
+)
+from ..auth import get_current_active_user, get_current_admin_user
 
 # 创建路由
 router = APIRouter()
 
-# 依赖项：获取数据库会话
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-# 创建图书
-@router.post("/", response_model=BookSchema, status_code=status.HTTP_201_CREATED)
-def create_book(book: BookCreate, db: Session = Depends(get_db)):
+# ==================== 图书查询接口 ====================
+
+@router.get("/list", response_model=BookListResponse)
+def get_all_books(
+    skip: int = Query(0, ge=0, description="跳过记录数"),
+    limit: int = Query(10, ge=1, le=100, description="返回记录数"),
+    search: Optional[str] = Query(None, description="搜索关键词（书名或图书编号）"),
+    shelf_location: Optional[str] = Query(None, description="按书架位置筛选"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取所有图书列表
+    
+    支持分页、搜索和筛选
+    需要登录认证
+    """
+    query = db.query(Book)
+    
+    # 搜索过滤
+    if search:
+        query = query.filter(
+            (Book.name.contains(search)) | (Book.book_number.contains(search))
+        )
+    
+    # 书架位置过滤
+    if shelf_location:
+        query = query.filter(Book.shelf_location == shelf_location)
+    
+    # 获取总数
+    total = query.count()
+    
+    # 分页
+    books = query.offset(skip).limit(limit).all()
+    
+    return BookListResponse(total=total, books=books)
+
+
+@router.get("/{book_id}", response_model=BookSchema)
+def get_book(
+    book_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    根据ID获取图书信息
+    
+    需要登录认证
+    """
+    db_book = db.query(Book).filter(Book.id == book_id).first()
+    if db_book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="图书未找到"
+        )
+    return db_book
+
+
+@router.get("/number/{book_number}", response_model=BookSchema)
+def get_book_by_number(
+    book_number: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    根据图书编号获取图书信息
+    
+    需要登录认证
+    """
+    db_book = db.query(Book).filter(Book.book_number == book_number).first()
+    if db_book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="图书未找到"
+        )
+    return db_book
+
+
+# ==================== 图书管理接口（管理员权限） ====================
+
+@router.post("/create", response_model=BookSchema, status_code=status.HTTP_201_CREATED)
+def create_book(
+    book: BookCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    创建新图书（管理员权限）
+    
+    - **name**: 图书名称
+    - **book_number**: 图书编号（唯一）
+    - **shelf_location**: 书架位置
+    - **quantity**: 数量
+    - **preview_image**: 预览图片URL（可选）
+    """
     # 检查图书编号是否已存在
     db_book = db.query(Book).filter(Book.book_number == book.book_number).first()
     if db_book:
@@ -47,37 +144,24 @@ def create_book(book: BookCreate, db: Session = Depends(get_db)):
     db.refresh(db_book)
     return db_book
 
-# 获取所有图书
-@router.get("/", response_model=List[BookSchema])
-def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    books = db.query(Book).offset(skip).limit(limit).all()
-    return books
 
-# 根据ID获取图书
-@router.get("/{book_id}", response_model=BookSchema)
-def read_book(book_id: int, db: Session = Depends(get_db)):
-    db_book = db.query(Book).filter(Book.id == book_id).first()
-    if db_book is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="图书未找到"
-        )
-    return db_book
-
-# 根据图书编号获取图书
-@router.get("/number/{book_number}", response_model=BookSchema)
-def read_book_by_number(book_number: str, db: Session = Depends(get_db)):
-    db_book = db.query(Book).filter(Book.book_number == book_number).first()
-    if db_book is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="图书未找到"
-        )
-    return db_book
-
-# 更新图书
 @router.put("/{book_id}", response_model=BookSchema)
-def update_book(book_id: int, book: BookUpdate, db: Session = Depends(get_db)):
+def update_book(
+    book_id: int,
+    book: BookUpdate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    更新图书信息（管理员权限）
+    
+    可更新字段：
+    - **name**: 图书名称
+    - **book_number**: 图书编号
+    - **shelf_location**: 书架位置
+    - **quantity**: 数量
+    - **preview_image**: 预览图片URL
+    """
     db_book = db.query(Book).filter(Book.id == book_id).first()
     if db_book is None:
         raise HTTPException(
@@ -102,7 +186,7 @@ def update_book(book_id: int, book: BookUpdate, db: Session = Depends(get_db)):
         )
     
     # 更新字段
-    update_data = book.dict(exclude_unset=True)
+    update_data = book.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_book, field, value)
     
@@ -110,9 +194,16 @@ def update_book(book_id: int, book: BookUpdate, db: Session = Depends(get_db)):
     db.refresh(db_book)
     return db_book
 
-# 删除图书
-@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_book(book_id: int, db: Session = Depends(get_db)):
+
+@router.delete("/{book_id}", response_model=MessageResponse)
+def delete_book(
+    book_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    删除图书（管理员权限）
+    """
     db_book = db.query(Book).filter(Book.id == book_id).first()
     if db_book is None:
         raise HTTPException(
@@ -122,4 +213,5 @@ def delete_book(book_id: int, db: Session = Depends(get_db)):
     
     db.delete(db_book)
     db.commit()
-    return
+    
+    return MessageResponse(message="图书删除成功")

@@ -1,65 +1,75 @@
 <!--登录页面-->
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
-import type { FormRules } from "element-plus";
+import { ref, onMounted, onUnmounted } from "vue";
+import type { FormRules, FormInstance } from "element-plus";
 import { ElMessage } from "element-plus";
-import { userLoginService } from "@/api/user";
+import { userLoginService, getCurrentUserService } from "@/api/user";
 import { useUserStore } from "@/store/user";
-import { useSettingStore } from "@/store/setting";
 import { router } from "@/router";
 
 const userStore = useUserStore();
-const settingStore = useSettingStore();
 
 // 定义表单的内容列表对象
-const form = ref({
+const form = ref<ILoginRequest>({
   username: "",
   password: "",
 });
 
+// 登录中状态
+const loading = ref(false);
+
 // 定义表单的校验规则
 const formRules: FormRules = {
   username: [
-    { required: true, message: "请输入用户名", trigger: "blur" },
-    { pattern: /^[0-9]{12}$/, message: "用户名是长度为12的学号" },
+    { required: true, message: "请输入用户名或邮箱", trigger: "blur" },
+    { min: 3, message: "用户名至少3个字符", trigger: "blur" },
   ],
   password: [
-    {
-      required: true,
-      message: "请输入密码 ",
-      trigger: "blur",
-    },
+    { required: true, message: "请输入密码", trigger: "blur" },
+    { min: 6, message: "密码至少6个字符", trigger: "blur" },
   ],
 };
 
-// 获取表单
-const formRef = ref();
+// 获取表单引用
+const formRef = ref<FormInstance>();
 
 // 登录的回调函数
 const handleLogin = async () => {
   // 校验是否通过
-  await formRef.value.validate();
+  if (!formRef.value) return;
 
-  // 通过了, 弹出提示
-  // @ts-ignore
-  ElMessage.primary("登录中");
+  try {
+    await formRef.value.validate();
+  } catch {
+    return;
+  }
 
-  // 进行登录相关操作
-  userLoginService(form.value)
-    .then((res) => {
-      // 储存到本地
-      userStore.setRefreshToken(res.data.refresh_token);
-      userStore.setToken(res.data.token);
-      userStore.setUser(res.data.user);
+  loading.value = true;
 
-      // @ts-ignore
-      ElMessage.success("登录成功");
-      router.push("/");
-    })
-    .catch(() => {
-      // @ts-ignore
-      ElMessage.error("登录失败, 请重试");
-    });
+  try {
+    // 调用登录接口
+    const loginRes = await userLoginService(form.value);
+
+    // 保存Token
+    // @ts-ignore - 响应拦截器已处理
+    userStore.setToken(loginRes.access_token);
+
+    // 获取用户信息
+    const userRes = await getCurrentUserService();
+    // @ts-ignore - 响应拦截器已处理
+    userStore.setUser(userRes);
+
+    // @ts-ignore
+    ElMessage.success("登录成功");
+
+    // 跳转到首页
+    router.push("/");
+  } catch (error: unknown) {
+    console.error("登录失败:", error);
+    // 错误消息已在响应拦截器中处理
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 鼠标跟随光晕相关
@@ -81,18 +91,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("mousemove", handleMouseMove);
 });
-
-// 定义当前环境
-const currentEnvString = ref(
-  settingStore.currentEnvironment === 0 ? "开发环境" : "生产环境",
-);
-
-watch(
-  () => currentEnvString.value,
-  (newVal) => {
-    settingStore.setCurrentEnvironment(newVal === "开发环境" ? 0 : 1);
-  },
-);
 </script>
 
 <template>
@@ -112,35 +110,37 @@ watch(
     ></div>
 
     <el-card>
-      <template #header>欢迎来到 校园E站</template>
+      <template #header>欢迎来到 图书馆管理系统</template>
       <!-- 提供一个表单就行 -->
       <el-form
         class="container-form"
         ref="formRef"
         :model="form"
         :rules="formRules"
+        @keyup.enter="handleLogin"
       >
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" />
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名或邮箱"
+            :disabled="loading"
+          />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input show-password type="password" v-model="form.password" />
+          <el-input
+            show-password
+            type="password"
+            v-model="form.password"
+            placeholder="请输入密码"
+            :disabled="loading"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="handleLogin" type="primary">登录</el-button>
+          <el-button @click="handleLogin" type="primary" :loading="loading">
+            {{ loading ? "登录中..." : "登录" }}
+          </el-button>
         </el-form-item>
       </el-form>
-    </el-card>
-
-    <el-card>
-      <div class="env-changer">
-        <span>当前登录环境: </span>
-        <el-segmented
-          v-model="currentEnvString"
-          block
-          :options="['开发环境', '生产环境']"
-        />
-      </div>
     </el-card>
   </div>
 </template>

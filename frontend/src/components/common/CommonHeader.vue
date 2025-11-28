@@ -4,16 +4,21 @@ import { CircleClose, Collection, HomeFilled } from "@element-plus/icons-vue";
 import { useUserStore } from "@/store/user";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 
 const userStore = useUserStore();
 const router = useRouter();
 
-// 模拟用户信息
-const userInfo = {
-  name: userStore.user.nickname,
-  avatar: userStore.user.avatar,
-};
+// 用户显示名称（优先显示full_name，否则显示username）
+const displayName = computed(() => {
+  return userStore.user.full_name || userStore.user.username || "用户";
+});
+
+// 用户头像（暂时使用默认头像）
+const userAvatar = computed(() => {
+  // 可以根据需要添加头像URL逻辑
+  return "";
+});
 
 const handleUserDropdownCommand = (command: string) => {
   // 判断当前跳转方式
@@ -61,17 +66,18 @@ onMounted(() => {
 <template>
   <el-header>
     <div class="header-left">
-      <span>{{ userStore.user.nickname }} {{ currentTimePart }}好!</span>
+      <span>{{ displayName }} {{ currentTimePart }}好!</span>
       <span>欢迎使用图书馆管理后台</span>
+      <el-tag v-if="userStore.isAdmin" type="danger" size="small">管理员</el-tag>
     </div>
     <div class="header-right">
       <el-dropdown @command="handleUserDropdownCommand">
         <!-- 正常显示的部分 -->
         <div class="user-avatar" style="cursor: pointer; outline: none">
-          <el-avatar :src="userInfo.avatar">
-            <HomeFilled v-if="!userInfo.avatar" />
+          <el-avatar :src="userAvatar">
+            <HomeFilled v-if="!userAvatar" />
           </el-avatar>
-          <span style="margin-left: 8px">{{ userInfo.name }}</span>
+          <span style="margin-left: 8px">{{ displayName }}</span>
           <el-icon style="margin-left: 4px">
             <svg viewBox="0 0 1024 1024" width="16" height="16">
               <path
@@ -117,10 +123,15 @@ onMounted(() => {
     font-size: 15px;
     font-weight: normal;
     display: flex;
+    align-items: center;
     gap: 10px;
 
     span:nth-child(1) {
       font-weight: bold;
+    }
+
+    .el-tag {
+      margin-left: 5px;
     }
   }
 

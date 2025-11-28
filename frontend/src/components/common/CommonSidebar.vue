@@ -7,6 +7,7 @@ import {
   HomeFilled, // @ts-ignore
   Setting, // @ts-ignore
   User, // @ts-ignore
+  Reading, // @ts-ignore
 } from "@element-plus/icons-vue";
 
 const route = useRoute();
@@ -32,6 +33,13 @@ const router = useRouter();
           <User />
         </el-icon>
         用户管理
+      </el-menu-item>
+
+      <el-menu-item index="/book" route="/book">
+        <el-icon>
+          <Reading />
+        </el-icon>
+        图书管理
       </el-menu-item>
 
       <el-sub-menu index="other-setting">

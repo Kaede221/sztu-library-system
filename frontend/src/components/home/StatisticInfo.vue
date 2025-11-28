@@ -7,36 +7,45 @@
 import { onMounted, ref } from "vue";
 // @ts-ignore
 import { Warning } from "@element-plus/icons-vue";
-import { getUserListService } from "@/api/user";
+import { getStatsService } from "@/api/stats";
 
 // 总用户数量
 const allUserCounter = ref(0);
 
-// 总发帖量
-const totalTopicsCounter = ref(0);
+// 总图书数量
+const totalBooksCounter = ref(0);
 
-// 进入页面就获取用户数据
+// 数据加载状态
+const loading = ref(true);
+
+// 进入页面就获取统计数据
 onMounted(async () => {
-  const res1 = await getUserListService({ size: 1 });
-  allUserCounter.value = res1.data.total;
+  try {
+    const res = await getStatsService();
+    // @ts-ignore - axios拦截器已返回response.data
+    allUserCounter.value = res.total_users;
+    // @ts-ignore
+    totalBooksCounter.value = res.total_books;
+  } catch (error) {
+    console.error("获取统计数据失败:", error);
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 
 <template>
-  <el-card>
+  <el-card v-loading="loading">
     <el-row :gutter="16">
       <el-col :span="12">
         <div class="statistic-card">
-          <el-statistic
-            :value="allUserCounter"
-            v-loading="allUserCounter === 0"
-          >
+          <el-statistic :value="allUserCounter">
             <template #title>
               <div style="display: inline-flex; align-items: center">
                 总用户数
                 <el-tooltip
                   effect="dark"
-                  content="仅限当前运行环境的累计用户数"
+                  content="系统中注册的用户总数"
                   placement="top"
                 >
                   <el-icon style="margin-left: 4px" :size="12">
@@ -50,16 +59,13 @@ onMounted(async () => {
       </el-col>
       <el-col :span="12">
         <div class="statistic-card">
-          <el-statistic
-            :value="totalTopicsCounter"
-            v-loading="totalTopicsCounter === 0"
-          >
+          <el-statistic :value="totalBooksCounter">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                帖子总数
+                图书总数
                 <el-tooltip
                   effect="dark"
-                  content="仅限当前运行环境的累计帖子数"
+                  content="图书馆中的图书总数"
                   placement="top"
                 >
                   <el-icon style="margin-left: 4px" :size="12">

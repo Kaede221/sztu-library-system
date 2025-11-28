@@ -9,6 +9,7 @@ import HomeView from "@/views/Home/HomeView.vue";
 import LoginPage from "@/views/Login/LoginPage.vue";
 import LayoutContainer from "@/views/LayoutContainer.vue";
 import UserList from "@/views/Users/UserList.vue";
+import BookList from "@/views/Books/BookList.vue";
 import SettingPage from "@/views/Other/SettingPage.vue";
 import ProfilePage from "@/views/Other/ProfilePage.vue";
 
@@ -21,6 +22,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: "", component: HomeView },
       { path: "user", component: UserList },
+      { path: "book", component: BookList },
       // 设置页面路由
       {
         path: "other",
