@@ -2,8 +2,9 @@
 import { onBeforeMount, ref } from "vue";
 import { getUserListService } from "@/api/user";
 import UserInfoDialog from "@/components/UserInfoDialog.vue";
+import AddUserDialog from "@/components/AddUserDialog.vue";
 // @ts-ignore
-import { Edit, Refresh, Search } from "@element-plus/icons-vue";
+import { Edit, Refresh, Search, Plus } from "@element-plus/icons-vue";
 
 // 当前页面显示的用户列表
 const userTableData = ref<IUser[]>([]);
@@ -79,6 +80,9 @@ const handleCheckUserInfo = (userInfo: IUser, mode: "check" | "edit") => {
   userInfoDialogMode.value = mode;
 };
 
+// 添加用户弹窗
+const showAddUserDialog = ref(false);
+
 // 搜索用户
 const handleSearch = async () => {
   currentPageIndex.value = 1;
@@ -136,6 +140,9 @@ const formatDate = (dateStr: string) => {
           搜索
         </el-button>
         <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+        <el-button type="success" :icon="Plus" @click="showAddUserDialog = true">
+          添加用户
+        </el-button>
       </div>
     </el-card>
 
@@ -216,6 +223,12 @@ const formatDate = (dateStr: string) => {
       :mode="userInfoDialogMode"
       v-model:visible="showUserInfoDialog"
       :current-user="currentShowUserInfo"
+      @refresh-table="fetchUserData"
+    />
+
+    <!-- 添加用户弹窗 -->
+    <AddUserDialog
+      v-model:visible="showAddUserDialog"
       @refresh-table="fetchUserData"
     />
   </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
+import { useUserStore } from "@/store/user";
 import {
   // @ts-ignore
   Calendar, // @ts-ignore
@@ -12,6 +13,7 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 </script>
 
 <template>
@@ -28,7 +30,8 @@ const router = useRouter();
         <span>首页</span>
       </el-menu-item>
 
-      <el-menu-item index="/user" route="/user">
+      <!-- 只有管理员才能看到用户管理 -->
+      <el-menu-item v-if="userStore.isAdmin" index="/user" route="/user">
         <el-icon>
           <User />
         </el-icon>
