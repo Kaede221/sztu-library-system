@@ -44,7 +44,8 @@ const userStore = useUserStore();
         用户管理
       </el-menu-item>
 
-      <el-menu-item index="/book" route="/book">
+      <!-- 图书管理（仅管理员可见） -->
+      <el-menu-item v-if="userStore.isAdmin" index="/book" route="/book">
         <el-icon>
           <Reading />
         </el-icon>
@@ -59,8 +60,8 @@ const userStore = useUserStore();
         分类管理
       </el-menu-item>
 
-      <!-- 我的借阅 -->
-      <el-menu-item index="/borrow" route="/borrow">
+      <!-- 我的借阅（仅非管理员可见） -->
+      <el-menu-item v-if="!userStore.isAdmin" index="/borrow" route="/borrow">
         <el-icon>
           <Notebook />
         </el-icon>

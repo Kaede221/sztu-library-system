@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount, ref } from "vue";
 import { getBookListService, createBookService } from "@/api/book";
+import { getCategoryListService } from "@/api/category";
 import BookInfoDialog from "@/components/BookInfoDialog.vue";
 // @ts-ignore
 import { Edit, Refresh, Search, Plus } from "@element-plus/icons-vue";
@@ -24,6 +25,9 @@ const searchKeyword = ref("");
 // 书架位置筛选
 const shelfLocationFilter = ref("");
 
+// 分类筛选
+const categoryFilter = ref<number | undefined>(undefined);
+
 // 记录当前是第几页
 const currentPageIndex = ref(1);
 
@@ -36,6 +40,7 @@ const fetchBookData = async () => {
       limit: pageSize,
       search: searchKeyword.value.trim() || undefined,
       shelf_location: shelfLocationFilter.value || undefined,
+      category_id: categoryFilter.value,
     });
     // @ts-ignore - 响应拦截器已处理
     bookTableData.value = res.books || [];
@@ -51,6 +56,7 @@ const fetchBookData = async () => {
 // 进入图书列表, 加载图书数据即可
 onBeforeMount(async () => {
   await fetchBookData();
+  await fetchCategoryList();
 });
 
 // 切换分页的回调函数
@@ -86,6 +92,7 @@ const handleSearch = async () => {
 const handleReset = async () => {
   searchKeyword.value = "";
   shelfLocationFilter.value = "";
+  categoryFilter.value = undefined;
   currentPageIndex.value = 1;
   await fetchBookData();
 };
@@ -98,8 +105,34 @@ const addFormData = ref<IBookCreateRequest>({
   shelf_location: "",
   quantity: 0,
   preview_image: "",
+  category_id: undefined,
 });
 const isAddSubmitting = ref(false);
+
+// 分类列表
+const categoryList = ref<ICategory[]>([]);
+const isLoadingCategories = ref(false);
+
+// 获取分类列表
+const fetchCategoryList = async () => {
+  isLoadingCategories.value = true;
+  try {
+    const res = await getCategoryListService({ limit: 500 });
+    // @ts-ignore
+    categoryList.value = res.categories || [];
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    isLoadingCategories.value = false;
+  }
+};
+
+// 根据分类ID获取分类名称
+const getCategoryName = (categoryId: number | null | undefined): string => {
+  if (!categoryId) return "-";
+  const category = categoryList.value.find(cat => cat.id === categoryId);
+  return category?.name || "-";
+};
 
 // 打开新增弹窗
 const handleOpenAddDialog = () => {
@@ -109,8 +142,13 @@ const handleOpenAddDialog = () => {
     shelf_location: "",
     quantity: 0,
     preview_image: "",
+    category_id: undefined as number | undefined,
   };
   showAddDialog.value = true;
+  // 如果分类列表为空，则获取
+  if (categoryList.value.length === 0) {
+    fetchCategoryList();
+  }
 };
 
 // 提交新增
@@ -152,6 +190,20 @@ const handleAddSubmit = async () => {
           clearable
           style="width: 150px"
         />
+        <el-select
+          v-model="categoryFilter"
+          placeholder="分类筛选"
+          clearable
+          style="width: 150px"
+          :loading="isLoadingCategories"
+        >
+          <el-option
+            v-for="cat in categoryList"
+            :key="cat.id"
+            :label="cat.name"
+            :value="cat.id"
+          />
+        </el-select>
         <el-button type="primary" :icon="Search" @click="handleSearch">
           搜索
         </el-button>
@@ -183,6 +235,11 @@ const handleAddSubmit = async () => {
             <el-tag :type="scope.row.quantity > 0 ? 'success' : 'danger'">
               {{ scope.row.quantity }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="category_id" label="分类" width="120">
+          <template #default="scope">
+            <span>{{ getCategoryName(scope.row.category_id) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="preview_image" label="预览图" width="100">
@@ -279,6 +336,23 @@ const handleAddSubmit = async () => {
             v-model="addFormData.preview_image"
             placeholder="请输入图片URL"
           />
+        </el-form-item>
+
+        <el-form-item label="分类">
+          <el-select
+            v-model="addFormData.category_id"
+            placeholder="选择分类（可选）"
+            clearable
+            style="width: 100%"
+            :loading="isLoadingCategories"
+          >
+            <el-option
+              v-for="cat in categoryList"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
 

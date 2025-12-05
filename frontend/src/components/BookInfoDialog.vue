@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import { updateBookService, deleteBookService } from "@/api/book";
+import { getCategoryListService } from "@/api/category";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 // 定义props
@@ -23,10 +24,34 @@ const formData = ref<IBookUpdateRequest>({
   shelf_location: "",
   quantity: 0,
   preview_image: "",
+  category_id: undefined,
 });
 
 // 是否正在提交
 const isSubmitting = ref(false);
+
+// 分类列表
+const categoryList = ref<ICategory[]>([]);
+const isLoadingCategories = ref(false);
+
+// 获取分类列表
+const fetchCategoryList = async () => {
+  isLoadingCategories.value = true;
+  try {
+    const res = await getCategoryListService({ limit: 500 });
+    // @ts-ignore
+    categoryList.value = res.categories || [];
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    isLoadingCategories.value = false;
+  }
+};
+
+// 组件挂载时获取分类列表
+onMounted(() => {
+  fetchCategoryList();
+});
 
 // 计算属性：是否为查看模式
 const isCheckMode = computed(() => props.mode === "check");
@@ -44,9 +69,10 @@ watch(
       formData.value = {
         name: newBook.name,
         book_number: newBook.book_number,
-        shelf_location: newBook.shelf_location,
+        shelf_location: newBook.shelf_location || "",
         quantity: newBook.quantity,
         preview_image: newBook.preview_image || "",
+        category_id: newBook.category_id || undefined,
       };
     }
   },
@@ -136,6 +162,24 @@ const handleDelete = async () => {
           v-model="formData.preview_image"
           placeholder="请输入图片URL"
         />
+      </el-form-item>
+
+      <el-form-item label="分类">
+        <el-select
+          v-model="formData.category_id"
+          placeholder="选择分类（可选）"
+          clearable
+          style="width: 100%"
+          :loading="isLoadingCategories"
+          :disabled="isCheckMode"
+        >
+          <el-option
+            v-for="cat in categoryList"
+            :key="cat.id"
+            :label="cat.name"
+            :value="cat.id"
+          />
+        </el-select>
       </el-form-item>
 
       <el-form-item v-if="formData.preview_image" label="图片预览">
