@@ -9,6 +9,12 @@ import {
   Setting, // @ts-ignore
   User, // @ts-ignore
   Reading, // @ts-ignore
+  Collection, // @ts-ignore
+  Notebook, // @ts-ignore
+  Bell, // @ts-ignore
+  Star, // @ts-ignore
+  DataAnalysis, // @ts-ignore
+  Folder, // @ts-ignore
 } from "@element-plus/icons-vue";
 
 const route = useRoute();
@@ -43,6 +49,22 @@ const userStore = useUserStore();
           <Reading />
         </el-icon>
         图书管理
+      </el-menu-item>
+
+      <!-- 分类管理（管理员） -->
+      <el-menu-item v-if="userStore.isAdmin" index="/category" route="/category">
+        <el-icon>
+          <Folder />
+        </el-icon>
+        分类管理
+      </el-menu-item>
+
+      <!-- 我的借阅 -->
+      <el-menu-item index="/borrow" route="/borrow">
+        <el-icon>
+          <Notebook />
+        </el-icon>
+        我的借阅
       </el-menu-item>
 
       <el-sub-menu index="other-setting">

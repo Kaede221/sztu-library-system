@@ -7,13 +7,17 @@ const request = getRequest();
  * @param params 查询参数
  * @returns 图书列表
  */
-export const getBookListService = (params?: {
-  skip?: number;
-  limit?: number;
-  search?: string;
-  shelf_location?: string;
-}) => {
+export const getBookListService = (params?: IBookListParams) => {
   return request.get<IBookListResponse>("/book/list", { params });
+};
+
+/**
+ * 获取图书详情（包含分类信息）
+ * @param bookId 图书ID
+ * @returns 图书详情
+ */
+export const getBookDetailService = (bookId: number) => {
+  return request.get<IBookWithCategory>(`/book/detail/${bookId}`);
 };
 
 /**
@@ -32,6 +36,15 @@ export const getBookByIdService = (bookId: number) => {
  */
 export const getBookByNumberService = (bookNumber: string) => {
   return request.get<IBook>(`/book/number/${bookNumber}`);
+};
+
+/**
+ * 根据ISBN获取图书
+ * @param isbn ISBN
+ * @returns 图书信息
+ */
+export const getBookByIsbnService = (isbn: string) => {
+  return request.get<IBook>(`/book/isbn/${isbn}`);
 };
 
 /**
@@ -60,4 +73,12 @@ export const updateBookService = (bookId: number, data: IBookUpdateRequest) => {
  */
 export const deleteBookService = (bookId: number) => {
   return request.delete<IMessageResponse>(`/book/${bookId}`);
+};
+
+/**
+ * 获取所有图书标签
+ * @returns 标签列表
+ */
+export const getAllTagsService = () => {
+  return request.get<string[]>("/book/tags/all");
 };

@@ -13,6 +13,10 @@ import BookList from "@/views/Books/BookList.vue";
 import SettingPage from "@/views/Other/SettingPage.vue";
 import ProfilePage from "@/views/Other/ProfilePage.vue";
 
+// 新增页面
+import BorrowList from "@/views/Borrow/BorrowList.vue";
+import CategoryList from "@/views/Category/CategoryList.vue";
+
 const routes: RouteRecordRaw[] = [
   // 登录页面
   { path: "/login", component: LoginPage },
@@ -23,6 +27,9 @@ const routes: RouteRecordRaw[] = [
       { path: "", component: HomeView },
       { path: "user", component: UserList },
       { path: "book", component: BookList },
+      // 新增路由
+      { path: "borrow", component: BorrowList },
+      { path: "category", component: CategoryList },
       // 设置页面路由
       {
         path: "other",
