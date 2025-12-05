@@ -205,7 +205,7 @@ const treeProps = {
           </template>
         </el-table-column>
         <el-table-column prop="sort_order" label="排序" width="100" />
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="scope">
             <el-button
               type="primary"
@@ -258,7 +258,7 @@ const treeProps = {
           </template>
         </el-table-column>
         <el-table-column prop="sort_order" label="排序" width="100" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="scope">
             <el-button
               type="warning"
@@ -345,5 +345,18 @@ const treeProps = {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+/* 确保操作列按钮在一行内显示 */
+:deep(.el-table .el-table__cell) .cell {
+  white-space: nowrap;
+}
+
+/* 减少操作列按钮之间的间距 */
+:deep(.el-table .el-button) {
+  margin-right: 4px;
+}
+:deep(.el-table .el-button:last-child) {
+  margin-right: 0;
 }
 </style>

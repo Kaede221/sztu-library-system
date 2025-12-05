@@ -44,7 +44,7 @@ def get_dashboard_stats(
     active_users = db.query(User).filter(User.is_active == True).count()
     
     # 图书统计
-    total_books = db.query(Book).count()
+    total_books = db.query(func.sum(Book.quantity)).scalar() or 0
     total_categories = db.query(Category).count()
     
     # 借阅统计

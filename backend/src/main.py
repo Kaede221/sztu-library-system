@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 # 导入模块
 from .routes import (
@@ -104,7 +105,7 @@ def get_simple_statistics(
     - active_users: 活跃用户数
     """
     total_users = db.query(User).count()
-    total_books = db.query(Book).count()
+    total_books = db.query(func.sum(Book.quantity)).scalar() or 0
     total_categories = db.query(Category).count()
     active_users = db.query(User).filter(User.is_active == True).count()
     
